@@ -128,11 +128,11 @@ in {
 
     # Create ~/Applications/Cursor.app symlink for Spotlight on macOS
     home.activation.cursorApp = lib.mkIf pkgs.stdenv.isDarwin
-      (lib.hm.dag.entryAfter [ "writeBoundary" ] '
+      (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         mkdir -p "$HOME/Applications"
         rm -f "$HOME/Applications/Cursor.app"
         ln -sf "${cfg.package}/Applications/Cursor.app" "$HOME/Applications/Cursor.app"
-      ');
+      '');
     # Deploy MCP config
     home.file.".cursor/mcp.json" = mkIf (cfg.mcp.servers != {}) {
       text = mcpServersJson;
@@ -150,7 +150,7 @@ in {
 
     # Install extensions on activation
     home.activation.cursorExtensions = mkIf (cfg.extensions != [])
-      (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      (lib.hm.dag.entryAfter [ "writeBoundary" ] '''
         ${extensionInstallScript}
       '');
   };
