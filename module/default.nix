@@ -9,11 +9,18 @@
 #   - Extension installation
 #
 # MCP servers come from blackmatter-anvil (not duplicated here).
+{ skillHelpers }:
 { lib, config, pkgs, ... }:
 with lib;
 let
   cfg = config.blackmatter.components.cursor;
   cursorOpts = import ./cursor-options.nix { inherit lib; };
+
+  # Skills via substrate helper
+  skills = skillHelpers.mkSkills {
+    skillsDir = ../skills;
+    extraSkills = cfg.skills.extraSkills;
+  };
 
   # Build settings.json from typed options + user overrides
   cursorSettings = {
@@ -70,6 +77,9 @@ in {
   options.blackmatter.components.cursor = {
     enable = mkEnableOption "Cursor IDE declarative configuration";
 
+    # ── Skills (via substrate hm-skill-helpers) ────────────────────────
+    skills = skillHelpers.mkSkillOptions;
+
     package = mkOption {
       type = types.package;
       default = pkgs.code-cursor;
@@ -109,44 +119,52 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
-    home.packages = [ cfg.package ];
+  config = mkIf cfg.enable (mkMerge [
+    # ── Core Cursor config ─────────────────────────────────────────────
+    {
+      home.packages = [ cfg.package ];
 
-    home.activation.cursorApp = mkIf pkgs.stdenv.isDarwin
-      (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        mkdir -p "$HOME/Applications"
-        rm -f "$HOME/Applications/Cursor.app"
-        ln -sf "${cfg.package}/Applications/Cursor.app" "$HOME/Applications/Cursor.app"
-      '');
+      home.activation.cursorApp = mkIf pkgs.stdenv.isDarwin
+        (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          mkdir -p "$HOME/Applications"
+          rm -f "$HOME/Applications/Cursor.app"
+          ln -sf "${cfg.package}/Applications/Cursor.app" "$HOME/Applications/Cursor.app"
+        '');
 
-    home.file = mkMerge [
-      (optionalAttrs (cfg.mcp.servers != {}) {
-        ".cursor/mcp.json".text = mcpServersJson;
-      })
-      { "Library/Application Support/Cursor/User/settings.json".text = builtins.toJSON cursorSettings; }
-      (optionalAttrs (cfg.keybindings != []) {
-        "Library/Application Support/Cursor/User/keybindings.json".text = builtins.toJSON cfg.keybindings;
-      })
-      (optionalAttrs (cfg.cursor.cli.permissions.allow != [] || cfg.cursor.cli.permissions.deny != []) {
-        ".cursor/cli-config.json".text = builtins.toJSON cliConfig;
-      })
-      (optionalAttrs (cfg.cursor.hooks != {}) {
-        ".cursor/hooks.json".text = builtins.toJSON hooksConfig;
-      })
-      (optionalAttrs (cfg.rules != null) {
-        ".cursorrules".text = cfg.rules;
-      })
-      (optionalAttrs (cfg.cursor.cursorignore != []) {
-        ".cursorignore".text = concatStringsSep "\n" cfg.cursor.cursorignore + "\n";
-      })
-      (optionalAttrs (cfg.cursor.cursorindexingignore != []) {
-        ".cursorindexingignore".text = concatStringsSep "\n" cfg.cursor.cursorindexingignore + "\n";
-      })
-    ];
+      home.file = mkMerge [
+        (optionalAttrs (cfg.mcp.servers != {}) {
+          ".cursor/mcp.json".text = mcpServersJson;
+        })
+        { "Library/Application Support/Cursor/User/settings.json".text = builtins.toJSON cursorSettings; }
+        (optionalAttrs (cfg.keybindings != []) {
+          "Library/Application Support/Cursor/User/keybindings.json".text = builtins.toJSON cfg.keybindings;
+        })
+        (optionalAttrs (cfg.cursor.cli.permissions.allow != [] || cfg.cursor.cli.permissions.deny != []) {
+          ".cursor/cli-config.json".text = builtins.toJSON cliConfig;
+        })
+        (optionalAttrs (cfg.cursor.hooks != {}) {
+          ".cursor/hooks.json".text = builtins.toJSON hooksConfig;
+        })
+        (optionalAttrs (cfg.rules != null) {
+          ".cursorrules".text = cfg.rules;
+        })
+        (optionalAttrs (cfg.cursor.cursorignore != []) {
+          ".cursorignore".text = concatStringsSep "\n" cfg.cursor.cursorignore + "\n";
+        })
+        (optionalAttrs (cfg.cursor.cursorindexingignore != []) {
+          ".cursorindexingignore".text = concatStringsSep "\n" cfg.cursor.cursorindexingignore + "\n";
+        })
+      ];
 
-    home.activation.cursorExtensions = mkIf (cfg.extensions != [])
-      (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        ${extensionInstallScript}
-      '');
-  };
+      home.activation.cursorExtensions = mkIf (cfg.extensions != [])
+        (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${extensionInstallScript}
+        '');
+    }
+
+    # ── Skills (via substrate hm-skill-helpers) ──────────────────────
+    (mkIf (cfg.skills.enable && skills.files != {}) {
+      home.file = skills.homeFiles;
+    })
+  ]);
 }
