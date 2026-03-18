@@ -117,6 +117,14 @@ in {
       default = null;
       description = "Content for ~/.cursorrules.";
     };
+
+    guardrail = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Enable guardrail defensive hooks for Cursor shell execution.";
+      };
+    };
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -165,6 +173,16 @@ in {
     # ── Skills (via substrate hm-skill-helpers) ──────────────────────
     (mkIf (cfg.skills.enable && skills.files != {}) {
       home.file = skills.homeFiles;
+    })
+
+    # ── Guardrail defensive hooks ─────────────────────────────────────
+    (mkIf cfg.guardrail.enable {
+      blackmatter.components.cursor.cursor.hooks = {
+        preToolUse = [{
+          type = "command";
+          command = "${pkgs.guardrail}/bin/guardrail check";
+        }];
+      };
     })
   ]);
 }
