@@ -16,6 +16,12 @@ let
   cfg = config.blackmatter.components.cursor;
   cursorOpts = import ./cursor-options.nix { inherit lib; };
 
+  # Platform-specific settings path
+  isDarwin = pkgs.stdenv.isDarwin;
+  settingsDir = if isDarwin
+    then "Library/Application Support/Cursor/User"
+    else ".config/Cursor/User";
+
   # Skills via substrate helper
   skills = skillHelpers.mkSkills {
     skillsDir = ../skills;
@@ -143,9 +149,9 @@ in {
         (optionalAttrs (cfg.mcp.servers != {}) {
           ".cursor/mcp.json".text = mcpServersJson;
         })
-        { "Library/Application Support/Cursor/User/settings.json".text = builtins.toJSON cursorSettings; }
+        { "${settingsDir}/settings.json".text = builtins.toJSON cursorSettings; }
         (optionalAttrs (cfg.keybindings != []) {
-          "Library/Application Support/Cursor/User/keybindings.json".text = builtins.toJSON cfg.keybindings;
+          "${settingsDir}/keybindings.json".text = builtins.toJSON cfg.keybindings;
         })
         (optionalAttrs (cfg.cursor.cli.permissions.allow != [] || cfg.cursor.cli.permissions.deny != []) {
           ".cursor/cli-config.json".text = builtins.toJSON cliConfig;
