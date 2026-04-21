@@ -1,0 +1,23 @@
+schema_version: 1
+manifest:
+  name: blackmatter-cursor
+  kind: BlackmatterComponent
+  archetype: blackmatter-component-hm-overlay
+  description: Declarative Cursor IDE provisioning — settings, extensions, MCP via anvil.
+dimensions:
+  vocabulary: [cursor, ide, mcp, skills, guardrail]
+  domains: [Nix, JSON]
+  stack: [HomeManager]
+  modules:
+    home_manager: module/
+  render:
+    produces:
+      - "~/Library/Application Support/Cursor/User/settings.json"
+      - "~/.cursor/extensions/*"
+      - "~/.cursor/mcp.json"
+  compliance:
+    satisfies: []
+    participates: [ai-agent-governance]
+  dag:
+    inputs: [nixpkgs, substrate, guardrail]
+  attestation: { merkle_root: null, signed_by: null, producer: blackmatter-component-flake.nix }
