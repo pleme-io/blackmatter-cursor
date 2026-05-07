@@ -141,8 +141,13 @@ in {
       home.activation.cursorApp = mkIf pkgs.stdenv.isDarwin
         (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           mkdir -p "$HOME/Applications"
-          rm -f "$HOME/Applications/Cursor.app"
-          ln -sf "${cfg.package}/Applications/Cursor.app" "$HOME/Applications/Cursor.app"
+          # macOS BSD `ln -sf` follows existing-symlink-to-dir at the
+          # target path and creates the new link INSIDE the pointed-to
+          # directory (e.g. .../Cursor.app/Cursor.app — fails permission-
+          # denied on read-only nix store dirs). The `-n` flag makes
+          # ln treat the target symlink as a regular file and replace
+          # it atomically. Same flag works on GNU + BSD ln.
+          ln -snf "${cfg.package}/Applications/Cursor.app" "$HOME/Applications/Cursor.app"
         '');
 
       home.file = mkMerge [
