@@ -70,8 +70,14 @@ with lib;
   chat = {
     model = mkOption {
       type = types.str;
-      default = "auto";
-      description = "Default chat model ID.";
+      default = "claude-opus-4-6";
+      description = ''
+        Default chat model ID. Fleet doctrine ("intelligence over speed",
+        owned by `anvil.doctrine`) pins this to anvil's preferredModel
+        via `anvil.translatedSettings.cursor.chatModel`. The standalone
+        default here is set to the same value so blackmatter-cursor used
+        without anvil still gets the doctrine-aligned model.
+      '';
       example = "claude-opus-4-6";
     };
 
@@ -86,8 +92,15 @@ with lib;
   ai = {
     model = mkOption {
       type = types.str;
-      default = "auto";
-      description = "Default AI model for all Cursor operations.";
+      default = "claude-opus-4-6";
+      description = ''
+        Default AI model for all Cursor operations. Fleet doctrine
+        ("intelligence over speed", owned by `anvil.doctrine`) pins this
+        to anvil's preferredModel via
+        `anvil.translatedSettings.cursor.aiModel`. The standalone default
+        here is set to the same value so blackmatter-cursor used without
+        anvil still gets the doctrine-aligned model.
+      '';
       example = "claude-opus-4-6";
     };
   };

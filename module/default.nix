@@ -195,5 +195,39 @@ in {
         }];
       };
     })
+
+    # ── Anvil doctrine overlay ───────────────────────────────────────
+    # Semantic keys from `anvil.translatedSettings.cursor` get mapped to
+    # the corresponding typed `cursor.*` options via mkDefault. The
+    # cursor-options.nix defaults already encode the doctrine value, so
+    # this overlay is a no-op when doctrine is on (belt-and-suspenders
+    # per operator decision: change-default AND overlay). It becomes
+    # load-bearing if the standalone default ever drifts from anvil's
+    # preferredModel — the overlay re-asserts anvil's value.
+    #
+    # Adding a new doctrine-controlled cursor knob: add the semantic key
+    # to `anvil.translatedSettings.cursor`, then add a static line below
+    # with `mkIf (t ? <key>) (mkDefault t.<key>)`.
+    #
+    # NOTE: structure is static (top-level keys are unconditional) — the
+    # conditional inclusion uses `mkIf` *inside* the value, not
+    # `optionalAttrs` around the structure. Using optionalAttrs at this
+    # layer forces the module system to evaluate the condition while
+    # extracting option paths, which cycles through
+    # `config.blackmatter.components` (it needs cursor's own
+    # contributions before it can read anvil's). mkIf inside the value
+    # defers evaluation until the option is actually consumed.
+    #
+    # Also not gated on `cfg.enable` for the same recursion reason.
+    (
+      let
+        t = config.blackmatter.components.anvil.translatedSettings.cursor or {};
+      in {
+        blackmatter.components.cursor.cursor.ai.model =
+          mkIf (t ? aiModel) (mkDefault t.aiModel);
+        blackmatter.components.cursor.cursor.chat.model =
+          mkIf (t ? chatModel) (mkDefault t.chatModel);
+      }
+    )
   ]);
 }

@@ -9,6 +9,27 @@ editor settings, keybindings, and extension installation — all from Nix.
 Cursor is closed-source. The binary comes from `nixpkgs#code-cursor` (DMG download
 with notarization signature preserved). This module controls everything around it.
 
+## Fleet doctrine: intelligence over speed
+
+`cursor.ai.model` and `cursor.chat.model` are doctrine-controlled —
+they flow from `anvil.doctrine.preferredModel` via
+`anvil.translatedSettings.cursor.{aiModel,chatModel}`, applied to the
+typed options here via `mkDefault`. Per the operator's
+belt-and-suspenders decision, the standalone defaults in
+`cursor-options.nix` are *also* pinned to `claude-opus-4-6` so that
+blackmatter-cursor used without anvil still aligns with doctrine — the
+anvil overlay is a no-op when the defaults match (and load-bearing if
+they ever drift).
+
+| Setting | Source | Standalone fallback |
+|---------|--------|---------------------|
+| `cursor.ai.model` | `anvil.translatedSettings.cursor.aiModel` | `"claude-opus-4-6"` |
+| `cursor.chat.model` | `anvil.translatedSettings.cursor.chatModel` | `"claude-opus-4-6"` |
+
+To migrate the fleet to a newer top-tier model, edit
+`anvil.doctrine.preferredModel` — every consumer (claude/cursor/opencode/…)
+re-derives automatically.
+
 ## HM Module Options
 
 ```nix
